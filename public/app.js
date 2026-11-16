@@ -258,7 +258,7 @@ $('clear-history').addEventListener('click', () => { history = []; saveHistory()
 renderCommunities();
 renderSuggestions();
 $('history-count').textContent = history.length;
-try {
+if (document.querySelector('meta[name="wagle-runtime"]')?.content !== 'demo') try {
   const response = await fetch('/api/status', { signal: AbortSignal.timeout(3000) });
   if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
     const status = await response.json();
