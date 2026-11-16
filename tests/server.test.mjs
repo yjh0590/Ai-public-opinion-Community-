@@ -20,7 +20,7 @@ test('serves Korean page and assets, keeps secrets and server files private', as
     const page = await fetch(url);
     assert.equal(page.status, 200);
     assert.match(await page.text(), /생각 하나 던졌을 뿐인데/);
-    for (const path of ['/styles.css', '/app.js', '/community.js', '/favicon.svg']) assert.equal((await fetch(url + path)).status, 200);
+    for (const path of ['/styles.css', '/app.js', '/community.js', '/sites.js', '/favicon.svg']) assert.equal((await fetch(url + path)).status, 200);
     for (const path of ['/.env', '/server.mjs', '/package.json', '/.git/config']) assert.equal((await fetch(url + path)).status, 404);
   });
 });
