@@ -11,7 +11,7 @@ async function withServer(options, run) {
   const url = `http://127.0.0.1:${server.address().port}`;
   try { await run(url); } finally { await new Promise(resolve => server.close(resolve)); }
 }
-const payload = { text: '주 4일제 도입하면 어때?', mode: 'opinion', communities: ['square'] };
+const payload = { text: '주 4일제 도입하면 어때?', mode: 'opinion', communities: ['dc'] };
 const post = (url, body, extra = {}) => fetch(`${url}/api/reactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), ...extra });
 
 test('serves Korean page and assets, keeps secrets and server files private', async () => {
@@ -25,22 +25,22 @@ test('serves Korean page and assets, keeps secrets and server files private', as
   });
 });
 
-test('demo reacts in all seven atmospheres and supports AI diary mode', async () => {
+test('demo reacts in every site and supports AI diary mode', async () => {
   await withServer({ apiKey: '' }, async url => {
     const single = await (await post(url, payload)).json();
     assert.equal(single.demo, true);
     assert.equal(single.reactions.length, 6);
-    assert.ok(single.reactions.every(r => r.community === 'square'));
+    assert.ok(single.reactions.every(r => r.community === 'dc'));
     const all = await (await post(url, { ...payload, communities: communities.map(c => c.id), mode: 'diary' })).json();
-    assert.equal(all.reactions.length, 21);
-    assert.equal(new Set(all.reactions.map(r => r.community)).size, 7);
-    assert.ok(all.reactions.every(r => r.nickname.endsWith('봇')));
+    assert.equal(all.reactions.length, communities.length * 3);
+    assert.equal(new Set(all.reactions.map(r => r.community)).size, communities.length);
+    assert.ok(all.reactions.every(r => r.nickname.endsWith('🤖')));
   });
 });
 
 test('rejects invalid inputs, large bodies, and cross-origin requests', async () => {
   await withServer({ apiKey: '' }, async url => {
-    for (const body of [{ ...payload, text: '' }, { ...payload, text: '가'.repeat(501) }, { ...payload, communities: ['unknown'] }, { ...payload, communities: ['square', 'square'] }, { ...payload, mode: 'unknown' }, null]) assert.equal((await post(url, body)).status, 400);
+    for (const body of [{ ...payload, text: '' }, { ...payload, text: '가'.repeat(501) }, { ...payload, communities: ['unknown'] }, { ...payload, communities: ['dc', 'dc'] }, { ...payload, mode: 'unknown' }, null]) assert.equal((await post(url, body)).status, 400);
     assert.equal((await post(url, { ...payload, text: '가'.repeat(10000) })).status, 413);
     assert.equal((await post(url, payload, { headers: { 'Content-Type': 'application/json', Origin: 'https://other.example' } })).status, 403);
   });
@@ -55,7 +55,7 @@ test('rate limits repeated requests', async () => {
 
 test('real AI mode sends instructions and parses structured Responses output', async () => {
   let sent;
-  const reactions = Array.from({ length: 6 }, () => ({ community: 'square', nickname: '테스트봇', text: '주 4일제면 실제 업무량도 조정해야지.', likes: 3 }));
+  const reactions = Array.from({ length: 6 }, () => ({ community: 'dc', nickname: '테스트봇', text: '주 4일제면 실제 업무량도 조정해야지.', likes: 3 }));
   await withServer({ apiKey: 'test-key', model: 'test-model', fetchImpl: async (url, options) => {
     assert.equal(url, 'https://api.openai.com/v1/responses');
     sent = JSON.parse(options.body);
