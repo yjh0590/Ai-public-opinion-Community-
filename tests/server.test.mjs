@@ -119,3 +119,25 @@ test('provider failures and refused or incomplete output never silently become d
     });
   }
 });
+
+test('gura button makes a longer, embellished post with a "this is fiction" comment', async () => {
+  await withServer({ apiKey: '' }, async url => {
+    const plain = await (await post(url, payload)).json();
+    const gura = await (await post(url, { ...payload, gura: true })).json();
+    assert.ok(gura.post.body.length > plain.post.body.length + 50);
+    assert.ok(gura.post.body.includes('아마도'));
+    assert.ok(gura.reactions.some(r => /소설|주작|판타지|드라마/.test(r.text)));
+    assert.equal((await post(url, { ...payload, gura: 'yes' })).status, 400);
+  });
+  let sent;
+  const reactions = Array.from({ length: 6 }, () => ({ community: 'dc', nickname: 'ㅇㅇ', text: '소설 쓰네 ㅋㅋ', likes: 1, replyTo: -1 }));
+  await withServer({ apiKey: 'k', fetchImpl: async (url, options) => {
+    sent = JSON.parse(options.body);
+    return Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ post: { title: 't', body: 'b' }, reactions }) }] }] });
+  } }, async url => {
+    await post(url, { ...payload, gura: true });
+    assert.ok(sent.instructions.includes('구라 모드'));
+    await post(url, payload);
+    assert.ok(!sent.instructions.includes('구라 모드'));
+  });
+});
